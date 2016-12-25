@@ -8,18 +8,44 @@
 #include <psp2/camera.h>
 #include "quirc.h"
 #include "debugScreen.h"
+#include "http.h"
 #include <psp2/apputil.h>
+#include <psp2/shellutil.h>
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
 #define DISPLAY_WIDTH 640
 #define DISPLAY_HEIGHT 368
 #define printf psvDebugScreenPrintf
+#define DEFAULT_FILENAME "index.html"
+#define DEFAULT_FOLDERPATH "ux0:temp/"
+#define URL_TEST "https://drive.google.com/open?id=0B9LOWaw-o26PTmJmOXl2TU5Hc1E"
 
 enum {
 	COMMANDS_SCAN,
 	COMMANDS_QUIT,
-	COMMANDS_OPEN_BROWSER
+	COMMANDS_OPEN_BROWSER,
+    COMMANDS_DOWNLOAD
 };
+
+static int lock_power = 0;
+
+void powerLock()
+{
+	if (!lock_power)
+		sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+
+	lock_power++;
+}
+
+void powerUnlock()
+{
+	if (lock_power)
+		sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+
+	lock_power--;
+	if (lock_power < 0)
+		lock_power = 0;
+}
 
 int menu(char *payload)
 {
@@ -31,10 +57,12 @@ int menu(char *payload)
 
 	printf("select menu:\n");
 	printf("+ press X to scan qrcode (hold X again to exit camera)\n");
-	printf("+ press Start to exit\n");
+	printf("+ press START to exit\n");
 	if (payload != NULL) {
-		printf("+ press O to open browser with payload\n");
+        printf("\n");
 		printf("current payload: %s\n", payload);
+		printf("+ press O to open browser with payload\n");
+        printf("+ press TRIANGLE to download\n");
 	}
 
 	do {
@@ -48,6 +76,8 @@ int menu(char *payload)
 			command = COMMANDS_SCAN;
 		} else if (payload != NULL && ctrl_press.buttons & SCE_CTRL_CIRCLE) {
 			command = COMMANDS_OPEN_BROWSER;
+		} else if (payload != NULL && ctrl_press.buttons & SCE_CTRL_TRIANGLE) {
+			command = COMMANDS_DOWNLOAD;
 		}
 	} while (command == -1);
 
@@ -168,9 +198,39 @@ void open(char *payload)
 	sceAppUtilShutdown();
 	printf("shutdown util: %d\n", result);
 }
+
+void getFileName(char *url, char *name)
+{
+    int index = strlastindex(url, '/');
+    int len;
+    if (index < 0 || index == strlen(url)-1) {
+        len = strlen(DEFAULT_FOLDERPATH) + strlen(DEFAULT_FILENAME) + 1;
+        memset(name, 0x00, len);
+        sprintf(name, "%s%s", DEFAULT_FOLDERPATH, DEFAULT_FILENAME);
+    } else {
+        len = strlen(DEFAULT_FOLDERPATH) + strlen(url+index+1) + 1;
+        memset(name, 0x00, len);
+        sprintf(name, "%s%s", DEFAULT_FOLDERPATH, url+index+1);
+    }
+}
+
+void download(char *payload)
+{
+	httpInit();
+
+    char path[2048];
+    getFileName(payload, path);
+	directDownload(payload, path);
+
+	httpTerm();
+	sceKernelDelayThread(2*1000*1000);
+}
+
 int main(void)
 {
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG);
+	psvDebugScreenInit();
+	sceShellUtilInitEvents(0);
     char *payload = NULL;
     int command;
     bool found;
@@ -187,6 +247,15 @@ int main(void)
 			break;
 		case COMMANDS_OPEN_BROWSER:
 			open(payload);
+			break;
+		case COMMANDS_DOWNLOAD:
+			powerLock();
+			if (!isGoogleDriver(payload)) {
+				download(payload);
+			} else {
+			    googleDownload(payload);
+			}
+			powerUnlock();
 			break;
 		}
 	} while (!(command == COMMANDS_QUIT));

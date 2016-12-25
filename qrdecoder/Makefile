@@ -12,7 +12,9 @@ PROJECT := qrdecoder
 CXXFLAGS += -std=c++11 -I../common
 CFLAGS += -I../common
 
-LIBS := -lSceDisplay_stub -lSceCtrl_stub  -lSceCamera_stub -lSceAppUtil_stub 
+LIBS := -lSceDisplay_stub -lSceCtrl_stub  -lSceCamera_stub -lSceAppUtil_stub \
+        -lSceSysmodule_stub -lSceNet_stub -lSceNetCtl_stub -lSceHttp_stub \
+        -lSceSsl_stub -lSceShellSvc_stub
 
 SRC_C :=$(call rwildcard, src/, *.c)
 SRC_CPP :=$(call rwildcard, src/, *.cpp)
@@ -27,7 +29,7 @@ package: $(PROJECT).vpk
 
 $(PROJECT).vpk: eboot.bin param.sfo
 	vita-pack-vpk -s param.sfo -b eboot.bin $(PROJECT).vpk
-	
+
 eboot.bin: $(PROJECT).velf
 	vita-make-fself $(PROJECT).velf eboot.bin
 
