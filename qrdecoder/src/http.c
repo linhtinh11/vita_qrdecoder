@@ -23,9 +23,9 @@
 #define URL_DOC "https://docs.google.com"
 #define URL_DRIVER_PATTERN1 "https://drive.google.com/file/d/"
 #define URL_DRIVER_DOWNLOAD "https://docs.google.com/uc?id=%s&export=download"
-#define FILE_TMP "ux0:temp/qrdecoder.html"
-#define FILE_DEFAULT "ux0:temp/index.html"
-#define FILE_PATH_TEMP "ux0:temp/"
+#define FILE_TMP "ux0:data/qrdecoder.html"
+#define FILE_DEFAULT "ux0:data/index.html"
+#define FILE_PATH_TEMP "ux0:data/"
 
 enum {
     DOWNLOADED_DEST,
@@ -75,7 +75,7 @@ int debugPrintf(char *text, ...) {
     vsprintf(string, text, list);
     va_end(list);
 
-    SceUID fd = sceIoOpen("ux0:temp/qrdecoder_log.txt", SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
+    SceUID fd = sceIoOpen("ux0:data/qrdecoder_log.txt", SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
     if (fd >= 0) {
         sceIoWrite(fd, string, strlen(string));
         sceIoClose(fd);

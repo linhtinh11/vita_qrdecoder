@@ -17,7 +17,7 @@
 #define DISPLAY_HEIGHT 368
 #define printf psvDebugScreenPrintf
 #define DEFAULT_FILENAME "index.html"
-#define DEFAULT_FOLDERPATH "ux0:temp/"
+#define DEFAULT_FOLDERPATH "ux0:data/"
 #define URL_TEST "https://drive.google.com/open?id=0B9LOWaw-o26PTmJmOXl2TU5Hc1E"
 
 enum {
